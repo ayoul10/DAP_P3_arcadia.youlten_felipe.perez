@@ -1,0 +1,4 @@
+Essential system communication breakdown:
+1) Client(s) connect to the server
+2) Clients interact with one another(?)
+3) they both have to "constantly" be waiting for the screen usage

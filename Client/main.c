@@ -4,6 +4,10 @@
 
 //TODO: make .x files for rpc gen stuff
 
+void getChat(){
+  
+}
+
 int main(int argc, char *argv[]) {
 
   if(argc < 3){
