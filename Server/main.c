@@ -7,6 +7,9 @@
 //maybe we should make the file pointer a global variable or something?
 
 //This method inserts a new line to the local log file of the server.
+
+
+//TODO: make .x files for rpc gen stuff
 void myWrite(char *string){
 
 }
