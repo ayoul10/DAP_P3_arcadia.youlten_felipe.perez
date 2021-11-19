@@ -12,7 +12,7 @@ program_name_1(char *host)
 {
 	CLIENT *clnt;
 	int  *result_1;
-	int  increment_1_arg;
+	int  increment_1_arg = 10;
 
 #ifndef	DEBUG
 	clnt = clnt_create (host, PROGRAM_NAME, PROGRAM_NAME, "udp");
