@@ -2,7 +2,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "main.h"
+//#include "main.h"
 
 //maybe we should make the file pointer a global variable or something?
 
@@ -16,13 +16,18 @@ char* getChat(){
 }
 
 //Create log file to write information to
-FILE * createFile(){
-  int num;
-   // use appropriate location if you are using MacOS or Linux
+/*FILE * */ void createFile(){
+   FILE *fptr;
    fptr = fopen("../Server/logs.txt","w");
-   
-   fclose(fptr);
-   return fptr;
+   if(fptr == NULL)
+   {
+      printf("Error!");
+      exit(1);
+   }else{
+      fprintf(fptr,"Server Log File: \n");
+      fclose(fptr);
+   }
+   //return fptr;
 
 }
 
@@ -30,14 +35,8 @@ FILE * createFile(){
 
 int main() {
    // printf() displays the string inside quotation
-   FILE *fptr;
-   fptr = createFile();
-   if(fptr == NULL)
-   {
-      printf("Error!");
-      exit(1);
-   }
-   printf("Hello, World! I am the server :D");
+   /*fptr = */ createFile();
+   printf("Hello, World! I am the server :D \n");
 
    return 0;
 }
