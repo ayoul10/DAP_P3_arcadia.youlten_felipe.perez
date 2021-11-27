@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "string.h": "c",
+        "avx512vlcdintrin.h": "c",
+        "unistd.h": "c"
+    }
+}

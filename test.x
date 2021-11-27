@@ -1,5 +1,10 @@
-program  PROGRAM_NAME{
- version PROGRAM_NAME {
-   int increment (int) = 1;
+struct message {
+  string contents<>;
+};
+
+program PROGRAM_NAME{
+ version ALPHA {
+   void myWrite (message) = 1;
+   message getChar (void) = 2;
  } = 1;
-} = 0x20000001; 
+} = 0x20000001;

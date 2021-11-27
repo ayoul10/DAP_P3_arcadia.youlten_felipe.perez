@@ -5,30 +5,47 @@
  */
 
 #include "test.h"
-
+#include <unistd.h>
+#include <stdio.h>
 
 void
 program_name_1(char *host)
 {
 	CLIENT *clnt;
-	int  *result_1;
-	int  increment_1_arg = 30;
+	void  *result_1;
+	message  mywrite_1_arg;
+	message  *result_2;
+	char *getchar_1_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, PROGRAM_NAME, PROGRAM_NAME, "udp");
+	clnt = clnt_create (host, PROGRAM_NAME, ALPHA, "udp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
 	}
 #endif	/* DEBUG */
 
-	result_1 = increment_1(&increment_1_arg, clnt);
-	if (result_1 == (int *) NULL) {
-		clnt_perror (clnt, "call failed");
+	mywrite_1_arg.contents = (char *) malloc(sizeof(char) * 11);
+
+	for (int i = 0; i < 9; i++)
+	{
+		mywrite_1_arg.contents[i] = i + '9';
 	}
 
-	printf("Number received: %d", *result_1);
+	mywrite_1_arg.contents[9] = '\n';
+	mywrite_1_arg.contents[10] = '\0';
+	write(STDOUT_FILENO, mywrite_1_arg.contents, strlen(mywrite_1_arg.contents));
 
+	result_1 = mywrite_1(&mywrite_1_arg, clnt);
+	if (result_1 == (void *) NULL) {
+		clnt_perror (clnt, "call failed");
+	}
+	/*
+	result_2 = getchar_1((void*)&getchar_1_arg, clnt);
+	if (result_2 == (message *) NULL) {
+		clnt_perror (clnt, "call failed");
+	}
+	*/
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */

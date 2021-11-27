@@ -2,3 +2,10 @@ Essential system communication breakdown:
 1) Client(s) connect to the server
 2) Clients interact with one another(?)
 3) they both have to "constantly" be waiting for the screen usage
+
+Client:
+1. a
+2. Create 2 windows
+3. Set up signal handling for calling the readlog from server
+4. Wait till user inputs or 1 sec has passed
+5. If client enters message, send to server. Server will update log.

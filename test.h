@@ -14,20 +14,41 @@ extern "C" {
 #endif
 
 
+struct message {
+	char *contents;
+};
+typedef struct message message;
+
 #define PROGRAM_NAME 0x20000001
-#define PROGRAM_NAME 1
+#define ALPHA 1
 
 #if defined(__STDC__) || defined(__cplusplus)
-#define increment 1
-extern  int * increment_1(int *, CLIENT *);
-extern  int * increment_1_svc(int *, struct svc_req *);
+#define myWrite 1
+extern  void * mywrite_1(message *, CLIENT *);
+extern  void * mywrite_1_svc(message *, struct svc_req *);
+#define getChar 2
+extern  message * getchar_1(void *, CLIENT *);
+extern  message * getchar_1_svc(void *, struct svc_req *);
 extern int program_name_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
-#define increment 1
-extern  int * increment_1();
-extern  int * increment_1_svc();
+#define myWrite 1
+extern  void * mywrite_1();
+extern  void * mywrite_1_svc();
+#define getChar 2
+extern  message * getchar_1();
+extern  message * getchar_1_svc();
 extern int program_name_1_freeresult ();
+#endif /* K&R C */
+
+/* the xdr functions */
+
+#if defined(__STDC__) || defined(__cplusplus)
+extern  bool_t xdr_message (XDR *, message*);
+
+#else /* K&R C */
+extern bool_t xdr_message ();
+
 #endif /* K&R C */
 
 #ifdef __cplusplus

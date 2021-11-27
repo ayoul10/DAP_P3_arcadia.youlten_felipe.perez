@@ -5,18 +5,27 @@
  */
 
 #include "test.h"
+#include <unistd.h>
+#include <stdio.h>
 
-int *
-increment_1_svc(int *argp, struct svc_req *rqstp)
+void *
+mywrite_1_svc(message *argp, struct svc_req *rqstp)
 {
-	static int  result;
+	static char * result;
+
+	write(STDOUT_FILENO, argp->contents, 10);
+
+	return (void *) &result;
+}
+
+message *
+getchar_1_svc(void *argp, struct svc_req *rqstp)
+{
+	static message  result;
 
 	/*
 	 * insert server code here
 	 */
-
-	result = *argp;
-	result++;
 
 	return &result;
 }

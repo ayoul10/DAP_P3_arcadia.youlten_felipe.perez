@@ -20,7 +20,7 @@ static void
 program_name_1(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
-		int increment_1_arg;
+		message mywrite_1_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -31,10 +31,16 @@ program_name_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
 		return;
 
-	case increment:
-		_xdr_argument = (xdrproc_t) xdr_int;
-		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) increment_1_svc;
+	case myWrite:
+		_xdr_argument = (xdrproc_t) xdr_message;
+		_xdr_result = (xdrproc_t) xdr_void;
+		local = (char *(*)(char *, struct svc_req *)) mywrite_1_svc;
+		break;
+
+	case getChar:
+		_xdr_argument = (xdrproc_t) xdr_void;
+		_xdr_result = (xdrproc_t) xdr_message;
+		local = (char *(*)(char *, struct svc_req *)) getchar_1_svc;
 		break;
 
 	default:
@@ -62,15 +68,15 @@ main (int argc, char **argv)
 {
 	register SVCXPRT *transp;
 
-	pmap_unset (PROGRAM_NAME, PROGRAM_NAME);
+	pmap_unset (PROGRAM_NAME, ALPHA);
 
 	transp = svcudp_create(RPC_ANYSOCK);
 	if (transp == NULL) {
 		fprintf (stderr, "%s", "cannot create udp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, PROGRAM_NAME, PROGRAM_NAME, program_name_1, IPPROTO_UDP)) {
-		fprintf (stderr, "%s", "unable to register (PROGRAM_NAME, PROGRAM_NAME, udp).");
+	if (!svc_register(transp, PROGRAM_NAME, ALPHA, program_name_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (PROGRAM_NAME, ALPHA, udp).");
 		exit(1);
 	}
 
@@ -79,8 +85,8 @@ main (int argc, char **argv)
 		fprintf (stderr, "%s", "cannot create tcp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, PROGRAM_NAME, PROGRAM_NAME, program_name_1, IPPROTO_TCP)) {
-		fprintf (stderr, "%s", "unable to register (PROGRAM_NAME, PROGRAM_NAME, tcp).");
+	if (!svc_register(transp, PROGRAM_NAME, ALPHA, program_name_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (PROGRAM_NAME, ALPHA, tcp).");
 		exit(1);
 	}
 
