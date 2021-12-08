@@ -7,6 +7,9 @@
 #include "test.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+ 
 
 #define HEIGHT_WIN_CHAT 30
 #define FILENAME "log.txt" //3 extra chars for \0, > and space
@@ -27,7 +30,7 @@ mywrite_1_svc(message *argp, struct svc_req *rqstp)
             /* write to file using fputc() function */
             fputc(argp->contents[i], file);
         }
-
+		fputc('\n', file);
 	fclose(file);
 
 	return (void *) &result;
@@ -36,7 +39,9 @@ mywrite_1_svc(message *argp, struct svc_req *rqstp)
 message *
 getchar_1_svc(void *argp, struct svc_req *rqstp)
 {
-	static message  result;
+	static message result;
+
+	result.contents = "aaaaaaaaaa";
 
 	// Open the file and read the chat log
 

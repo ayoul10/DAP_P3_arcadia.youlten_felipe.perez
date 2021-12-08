@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #define WIDTH 100
 #define HEIGHT_WIN_USR_TEXT 5
@@ -18,6 +19,12 @@
 
 void destroy_win(WINDOW *local_win);
 WINDOW *create_newwin(int height, int width, int starty, int startx);
+void *draw_thread(void * chat_win);
+
+struct thread_struct {
+	CLIENT *clnt;
+	WINDOW *win;
+};
 
 void
 program_name_1(char *host, char * username)
@@ -25,8 +32,6 @@ program_name_1(char *host, char * username)
 	CLIENT *clnt;
 	void  *result_1;
 	message  mywrite_1_arg;
-	message  *result_2;
-	char *getchar_1_arg;
 
 #ifndef	DEBUG
 	clnt = clnt_create (host, PROGRAM_NAME, ALPHA, "udp");
@@ -77,6 +82,20 @@ program_name_1(char *host, char * username)
 	wmove(usr_text_win, 1, 1);
 	wprintw(usr_text_win, name_buffer);
 	wrefresh(usr_text_win);
+
+	// Set up threads
+    pthread_t thread;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+	struct thread_struct t;
+
+	t.clnt = clnt;
+	t.win = chat_win;
+
+    // Spawn the listen/receive deamons
+    pthread_create(&thread, &attr, draw_thread, (void *) &t);
 
 	while((ch = getch()) != KEY_F(1))
 	{	
@@ -131,8 +150,10 @@ program_name_1(char *host, char * username)
 		}
 	}
 
-	destroy_win(chat_win);
+	pthread_join(thread, NULL);
+
 	destroy_win(usr_text_win);
+	destroy_win(chat_win);
 	endwin();
 	//return 0;
 	
@@ -204,4 +225,25 @@ WINDOW *create_newwin(int height, int width, int starty, int startx)
 	wrefresh(local_win);		/* Show that box 		*/
 
 	return local_win;
+}
+
+void *draw_thread(void * t)
+{
+	struct thread_struct * data = (struct thread_struct *) t;
+	WINDOW *chat_win = (WINDOW *) data->win;
+	CLIENT * clnt = (CLIENT *) data->clnt;
+
+	message  *result_2;
+	char *getchar_1_arg;
+
+	result_2 = getchar_1((void*)&getchar_1_arg, clnt);
+	if (result_2 == (message *) NULL) {
+		clnt_perror (clnt, "call failed");
+	}
+
+	werase(chat_win);
+	box(chat_win, 0 , 0);
+	wmove(chat_win, 1, 1);
+	wprintw(chat_win, result_2->contents);
+	wrefresh(chat_win);
 }
