@@ -7,9 +7,18 @@
 #include "test.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <ncurses.h>
+#include <stdlib.h>
+
+#define WIDTH 100
+#define HEIGHT_WIN_USR_TEXT 10 
+#define HEIGHT_WIN_CHAT 40
+
+void destroy_win(WINDOW *local_win);
+WINDOW *create_newwin(int height, int width, int starty, int startx);
 
 void
-program_name_1(char *host)
+program_name_1(char *host, char * username)
 {
 	CLIENT *clnt;
 	void  *result_1;
@@ -24,23 +33,77 @@ program_name_1(char *host)
 		exit (1);
 	}
 #endif	/* DEBUG */
+	
+	WINDOW *chat_win;
+	WINDOW *usr_text_win;
+	int ch;
 
-	mywrite_1_arg.contents = (char *) malloc(sizeof(char) * 11);
+	char * array = calloc(0,0);
+	int num_chars =0;
 
-	for (int i = 0; i < 9; i++)
-	{
-		mywrite_1_arg.contents[i] = i + '9';
+	initscr();			/* Start curses mode 		*/
+	cbreak();			/* Line buffering disabled, Pass on
+					 	* every thing to me 		*/
+	keypad(stdscr, TRUE);		/* I need that nifty F1 	*/
+	noecho();
+	refresh();
+
+	chat_win = create_newwin(HEIGHT_WIN_CHAT, WIDTH, 0, 0);
+	usr_text_win = create_newwin(HEIGHT_WIN_USR_TEXT, WIDTH, HEIGHT_WIN_CHAT, 0);
+
+	wmove(usr_text_win, 1, 1);
+	wrefresh(usr_text_win);
+
+	while((ch = getch()) != KEY_F(1))
+	{	
+		switch(ch)
+		{	case '\n':
+				//Finish saving usr input into string
+				num_chars++;
+				array = realloc(array, num_chars * sizeof(char));
+				array[num_chars-1] = '\0';
+
+				//return cursor to beggining
+				werase(usr_text_win);
+				box(usr_text_win, 0 , 0);
+				wmove(usr_text_win, 1, 1);
+				wrefresh(usr_text_win);
+
+				//Print user input in chat window
+				werase(chat_win);
+				box(chat_win, 0 , 0);
+				wmove(chat_win, 1, 1);
+				wprintw(chat_win, array);
+				wrefresh(chat_win);
+
+				//reset num chars
+				num_chars = 0;
+
+				break;
+			default:
+				num_chars++;
+				array = realloc(array, num_chars * sizeof(char));
+				array[num_chars-1] = (char) ch;
+				wechochar(usr_text_win, ch);
+				
+				break;
+		}
 	}
 
-	mywrite_1_arg.contents[9] = '\n';
-	mywrite_1_arg.contents[10] = '\0';
+	destroy_win(chat_win);
+	destroy_win(usr_text_win);
+	endwin();
+	return 0;
+	
+	/*
+	mywrite_1_arg.contents = username;
 	write(STDOUT_FILENO, mywrite_1_arg.contents, strlen(mywrite_1_arg.contents));
 
 	result_1 = mywrite_1(&mywrite_1_arg, clnt);
 	if (result_1 == (void *) NULL) {
 		clnt_perror (clnt, "call failed");
 	}
-	/*
+	
 	result_2 = getchar_1((void*)&getchar_1_arg, clnt);
 	if (result_2 == (message *) NULL) {
 		clnt_perror (clnt, "call failed");
@@ -51,17 +114,53 @@ program_name_1(char *host)
 #endif	 /* DEBUG */
 }
 
-
 int
-main (int argc, char *argv[])
-{
+main (int argc, char *argv[]) {
 	char *host;
+	char *username;
 
-	if (argc < 2) {
-		printf ("usage: %s server_host\n", argv[0]);
+	if (argc < 3) {
+		printf ("usage: %s server_host, username\n", argv[0]);
 		exit (1);
 	}
+	
 	host = argv[1];
-	program_name_1 (host);
-exit (0);
+	username = argv[2];
+
+	program_name_1 (host, username);
+	exit (0);
+}
+
+void destroy_win(WINDOW *local_win)
+{	
+	/* box(local_win, ' ', ' '); : This won't produce the desired
+	 * result of erasing the window. It will leave it's four corners 
+	 * and so an ugly remnant of window. 
+	 */
+	wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+	/* The parameters taken are 
+	 * 1. win: the window on which to operate
+	 * 2. ls: character to be used for the left side of the window 
+	 * 3. rs: character to be used for the right side of the window 
+	 * 4. ts: character to be used for the top side of the window 
+	 * 5. bs: character to be used for the bottom side of the window 
+	 * 6. tl: character to be used for the top left corner of the window 
+	 * 7. tr: character to be used for the top right corner of the window 
+	 * 8. bl: character to be used for the bottom left corner of the window 
+	 * 9. br: character to be used for the bottom right corner of the window
+	 */
+	wrefresh(local_win);
+	delwin(local_win);
+}
+
+WINDOW *create_newwin(int height, int width, int starty, int startx)
+{	WINDOW *local_win;
+
+	local_win = newwin(height, width, starty, startx);
+	box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 * lines			*/
+	wrefresh(local_win);		/* Show that box 		*/
+
+	return local_win;
 }

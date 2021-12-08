@@ -24,8 +24,8 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
 	static message  result;
 
 	/*
-	 * insert server code here
-	 */
+	* insert server code here
+	*/
 
 	return &result;
 }
