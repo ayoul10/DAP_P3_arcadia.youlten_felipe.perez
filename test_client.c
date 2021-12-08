@@ -19,17 +19,14 @@
 
 void destroy_win(WINDOW *local_win);
 WINDOW *create_newwin(int height, int width, int starty, int startx);
-void *draw_thread(void * chat_win);
+//void *draw_thread(void * chat_win);
 
-struct thread_struct {
-	CLIENT *clnt;
-	WINDOW *win;
-};
+WINDOW *chat_win;
+CLIENT *clnt;
 
 void
 program_name_1(char *host, char * username)
 {
-	CLIENT *clnt;
 	void  *result_1;
 	message  mywrite_1_arg;
 
@@ -40,8 +37,7 @@ program_name_1(char *host, char * username)
 		exit (1);
 	}
 #endif	/* DEBUG */
-	
-	WINDOW *chat_win;
+
 	WINDOW *usr_text_win;
 	int ch;
 
@@ -89,13 +85,8 @@ program_name_1(char *host, char * username)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-	struct thread_struct t;
-
-	t.clnt = clnt;
-	t.win = chat_win;
-
     // Spawn the listen/receive deamons
-    pthread_create(&thread, &attr, draw_thread, (void *) &t);
+    //pthread_create(&thread, &attr, draw_thread, NULL);
 
 	while((ch = getch()) != KEY_F(1))
 	{	
@@ -113,15 +104,6 @@ program_name_1(char *host, char * username)
 				wprintw(usr_text_win, name_buffer);
 				wrefresh(usr_text_win);
 
-				//Print text in chat window
-				/*
-				werase(chat_win);
-				box(chat_win, 0 , 0);
-				wmove(chat_win, 1, 1);
-				wprintw(chat_win, usr_txt);
-				wrefresh(chat_win);
-				*/
-
 				// prepare msg to be sent
 				char * msg = (char*) malloc((strlen(name_buffer) + strlen(usr_txt)) * sizeof(char));
 				strcpy(msg, name_buffer);
@@ -136,6 +118,39 @@ program_name_1(char *host, char * username)
 
 				//reset num chars
 				num_chars = 0;
+				
+				//Print text in chat window
+				/*
+				werase(chat_win);
+				box(chat_win, 0 , 0);
+				wmove(chat_win, 1, 1);
+				wprintw(chat_win, usr_txt);
+				wrefresh(chat_win);
+				*/
+
+				message *result_2;
+				char *getchar_1_arg;
+
+				result_2 = getchar_1((void*)&getchar_1_arg, clnt);
+				if (result_2 == (message *) NULL) {
+					//clnt_perror (clnt, "call failed or message empty");
+				}else{
+					/*
+					werase(chat_win);
+					box(chat_win, 0 , 0);
+					wmove(chat_win, 1, 1);
+					waddstr(chat_win, result_2->contents);
+					wrefresh(chat_win);
+					*/
+					FILE * file = fopen("a.txt", "w");
+
+					for (int i = 0; result_2->contents[i] != '\0'; i++) {
+						/* write to file using fputc() function */
+						fputc(result_2->contents[i], file);
+					}
+					fputc('\n', file);
+					fclose(file);
+				}
 
 				break;
 			default:
@@ -145,7 +160,6 @@ program_name_1(char *host, char * username)
 					usr_txt[num_chars-1] = (char) ch;
 					wechochar(usr_text_win, ch);
 				}
-				
 				break;
 		}
 	}
@@ -226,24 +240,26 @@ WINDOW *create_newwin(int height, int width, int starty, int startx)
 
 	return local_win;
 }
-
+/*
 void *draw_thread(void * t)
 {
-	struct thread_struct * data = (struct thread_struct *) t;
-	WINDOW *chat_win = (WINDOW *) data->win;
-	CLIENT * clnt = (CLIENT *) data->clnt;
-
-	message  *result_2;
+	message *result_2;
 	char *getchar_1_arg;
 
-	result_2 = getchar_1((void*)&getchar_1_arg, clnt);
-	if (result_2 == (message *) NULL) {
-		clnt_perror (clnt, "call failed");
+	while(1)
+	{
+		result_2 = getchar_1((void*)&getchar_1_arg, clnt);
+		if (result_2 == (message *) NULL) {
+			//clnt_perror (clnt, "call failed or message empty");
+		}else{
+			printf("%s", result_2->contents);
+			werase(chat_win);
+			box(chat_win, 0 , 0);
+			wmove(chat_win, 1, 1);
+			wprintw(chat_win, result_2->contents);
+			wrefresh(chat_win);
+		}
+		sleep(1);
 	}
-
-	werase(chat_win);
-	box(chat_win, 0 , 0);
-	wmove(chat_win, 1, 1);
-	wprintw(chat_win, result_2->contents);
-	wrefresh(chat_win);
 }
+*/

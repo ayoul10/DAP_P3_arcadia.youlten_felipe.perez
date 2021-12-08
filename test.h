@@ -8,6 +8,13 @@
 
 #include <rpc/rpc.h>
 
+//defines for 
+#define WIDTH 100
+#define HEIGHT_WIN_USR_TEXT 5
+#define HEIGHT_WIN_CHAT 30		// constant needs to be the same in the server
+#define USERNAME_MAX_LENGTH 23	// 3 extra chars for \0, > and space
+#define MESSAGE_MAX_LENGTH 269 	// Limiting user input to 269 per message (nice) twitter style
+#define FILENAME "log.txt"		//3 extra chars for \0, > and space
 
 #ifdef __cplusplus
 extern "C" {
