@@ -13,6 +13,7 @@
 #define WIDTH 100
 #define HEIGHT_WIN_USR_TEXT 10 
 #define HEIGHT_WIN_CHAT 40
+#define USERNAME_MAX_LENGTH 23 //3 extra chars for \0, > and space
 
 void destroy_win(WINDOW *local_win);
 WINDOW *create_newwin(int height, int width, int starty, int startx);
@@ -38,8 +39,25 @@ program_name_1(char *host, char * username)
 	WINDOW *usr_text_win;
 	int ch;
 
+	char name_buffer[USERNAME_MAX_LENGTH];
+
 	char * array = calloc(0,0);
 	int num_chars =0;
+
+	//Cut off name at max username length
+	if (strlen(username) > (USERNAME_MAX_LENGTH - 3))
+	{
+		strncpy(name_buffer, username, (USERNAME_MAX_LENGTH - 3));
+		name_buffer[(USERNAME_MAX_LENGTH - 3)] = '>';
+		name_buffer[(USERNAME_MAX_LENGTH - 2)] = ' ';
+		name_buffer[(USERNAME_MAX_LENGTH - 1)] = '\0';
+	}else{
+		strcpy(name_buffer, username);
+		name_buffer[strlen(username)] = '>';
+		name_buffer[strlen(username) + 1] = ' ';
+		name_buffer[strlen(username) + 2] = '\0';
+	}
+	
 
 	initscr();			/* Start curses mode 		*/
 	cbreak();			/* Line buffering disabled, Pass on
@@ -52,6 +70,7 @@ program_name_1(char *host, char * username)
 	usr_text_win = create_newwin(HEIGHT_WIN_USR_TEXT, WIDTH, HEIGHT_WIN_CHAT, 0);
 
 	wmove(usr_text_win, 1, 1);
+	wprintw(usr_text_win, name_buffer);
 	wrefresh(usr_text_win);
 
 	while((ch = getch()) != KEY_F(1))
@@ -63,13 +82,14 @@ program_name_1(char *host, char * username)
 				array = realloc(array, num_chars * sizeof(char));
 				array[num_chars-1] = '\0';
 
-				//return cursor to beggining
+				//return cursor to beggining usr text window
 				werase(usr_text_win);
 				box(usr_text_win, 0 , 0);
 				wmove(usr_text_win, 1, 1);
+				wprintw(usr_text_win, name_buffer);
 				wrefresh(usr_text_win);
 
-				//Print user input in chat window
+				//Print text in chat window
 				werase(chat_win);
 				box(chat_win, 0 , 0);
 				wmove(chat_win, 1, 1);
@@ -93,7 +113,7 @@ program_name_1(char *host, char * username)
 	destroy_win(chat_win);
 	destroy_win(usr_text_win);
 	endwin();
-	return 0;
+	//return 0;
 	
 	/*
 	mywrite_1_arg.contents = username;
