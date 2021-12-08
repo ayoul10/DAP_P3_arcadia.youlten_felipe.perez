@@ -11,9 +11,10 @@
 #include <stdlib.h>
 
 #define WIDTH 100
-#define HEIGHT_WIN_USR_TEXT 10 
-#define HEIGHT_WIN_CHAT 40
-#define USERNAME_MAX_LENGTH 23 //3 extra chars for \0, > and space
+#define HEIGHT_WIN_USR_TEXT 5
+#define HEIGHT_WIN_CHAT 30		// constant needs to be the same in the server
+#define USERNAME_MAX_LENGTH 23	// 3 extra chars for \0, > and space
+#define MESSAGE_MAX_LENGTH 269 	// Limiting user input to 269 per message (nice) twitter style
 
 void destroy_win(WINDOW *local_win);
 WINDOW *create_newwin(int height, int width, int starty, int startx);
@@ -39,9 +40,14 @@ program_name_1(char *host, char * username)
 	WINDOW *usr_text_win;
 	int ch;
 
+	//char msg_buffer[MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH];
 	char name_buffer[USERNAME_MAX_LENGTH];
 
-	char * array = calloc(0,0);
+	// init to 0 the buffers
+	//memset(msg_buffer, MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH, 0);
+	memset(name_buffer, USERNAME_MAX_LENGTH, 0);
+
+	char * usr_txt = calloc(0,0);
 	int num_chars =0;
 
 	//Cut off name at max username length
@@ -58,7 +64,6 @@ program_name_1(char *host, char * username)
 		name_buffer[strlen(username) + 2] = '\0';
 	}
 	
-
 	initscr();			/* Start curses mode 		*/
 	cbreak();			/* Line buffering disabled, Pass on
 					 	* every thing to me 		*/
@@ -79,8 +84,8 @@ program_name_1(char *host, char * username)
 		{	case '\n':
 				//Finish saving usr input into string
 				num_chars++;
-				array = realloc(array, num_chars * sizeof(char));
-				array[num_chars-1] = '\0';
+				usr_txt = realloc(usr_txt, num_chars * sizeof(char));
+				usr_txt[num_chars-1] = '\0';
 
 				//return cursor to beggining usr text window
 				werase(usr_text_win);
@@ -90,21 +95,37 @@ program_name_1(char *host, char * username)
 				wrefresh(usr_text_win);
 
 				//Print text in chat window
+				/*
 				werase(chat_win);
 				box(chat_win, 0 , 0);
 				wmove(chat_win, 1, 1);
-				wprintw(chat_win, array);
+				wprintw(chat_win, usr_txt);
 				wrefresh(chat_win);
+				*/
+
+				// prepare msg to be sent
+				char * msg = (char*) malloc((strlen(name_buffer) + strlen(usr_txt)) * sizeof(char));
+				strcpy(msg, name_buffer);
+				strcat(msg, usr_txt);
+
+				// Send text to server
+				mywrite_1_arg.contents = msg;
+				result_1 = mywrite_1(&mywrite_1_arg, clnt);
+				if (result_1 == (void *) NULL) {
+					clnt_perror (clnt, "call failed");
+				}
 
 				//reset num chars
 				num_chars = 0;
 
 				break;
 			default:
-				num_chars++;
-				array = realloc(array, num_chars * sizeof(char));
-				array[num_chars-1] = (char) ch;
-				wechochar(usr_text_win, ch);
+				if(num_chars < MESSAGE_MAX_LENGTH){
+					num_chars++;
+					usr_txt = realloc(usr_txt, num_chars * sizeof(char));
+					usr_txt[num_chars-1] = (char) ch;
+					wechochar(usr_text_win, ch);
+				}
 				
 				break;
 		}
