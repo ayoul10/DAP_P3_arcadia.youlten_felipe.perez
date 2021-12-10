@@ -135,21 +135,12 @@ program_name_1(char *host, char * username)
 				if (result_2 == (message *) NULL) {
 					//clnt_perror (clnt, "call failed or message empty");
 				}else{
-					/*
+					
 					werase(chat_win);
 					box(chat_win, 0 , 0);
 					wmove(chat_win, 1, 1);
 					waddstr(chat_win, result_2->contents);
 					wrefresh(chat_win);
-					*/
-					FILE * file = fopen("a.txt", "w");
-
-					for (int i = 0; result_2->contents[i] != '\0'; i++) {
-						/* write to file using fputc() function */
-						fputc(result_2->contents[i], file);
-					}
-					fputc('\n', file);
-					fclose(file);
 				}
 
 				break;
