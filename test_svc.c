@@ -66,6 +66,11 @@ program_name_1(struct svc_req *rqstp, register SVCXPRT *transp)
 int
 main (int argc, char **argv)
 {
+
+	// Create the file beforehand
+	FILE * file = fopen(FILENAME, "a");
+	fclose(file);
+
 	register SVCXPRT *transp;
 
 	pmap_unset (PROGRAM_NAME, ALPHA);

@@ -11,12 +11,21 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#define HEIGHT_OFFSET 5
+
 void destroy_win(WINDOW *local_win);
 WINDOW *create_newwin(int height, int width, int starty, int startx);
-//void *draw_thread(void * chat_win);
+void *draw_thread(void * chat_win);
 
+WINDOW *chat_win_fake;
+WINDOW *usr_text_win;
+WINDOW *usr_text_win_fake;
 WINDOW *chat_win;
+
 CLIENT *clnt;
+
+char name_buffer[USERNAME_MAX_LENGTH];
+char * usr_txt;
 
 void
 program_name_1(char *host, char * username)
@@ -32,17 +41,15 @@ program_name_1(char *host, char * username)
 	}
 #endif	/* DEBUG */
 
-	WINDOW *usr_text_win;
 	int ch;
 
 	//char msg_buffer[MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH];
-	char name_buffer[USERNAME_MAX_LENGTH];
 
 	// init to 0 the buffers
 	//memset(msg_buffer, MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH, 0);
-	memset(name_buffer, USERNAME_MAX_LENGTH, 0);
+	memset(name_buffer, 0, USERNAME_MAX_LENGTH);
 
-	char * usr_txt = calloc(0,0);
+	usr_txt = calloc(0,0);
 	int num_chars =0;
 
 	//Cut off name at max username length
@@ -66,12 +73,16 @@ program_name_1(char *host, char * username)
 	noecho();				// We will echo the letters ourselves
 	refresh();
 
-	chat_win = create_newwin(HEIGHT_WIN_CHAT + 2, WIDTH, 0, 0); // +2 to account for the bottom and top of the window which do not contain text
-	usr_text_win = create_newwin(HEIGHT_WIN_USR_TEXT, WIDTH, HEIGHT_WIN_CHAT + 2, 0);
+	chat_win = create_newwin(HEIGHT_WIN_CHAT + 2 + HEIGHT_OFFSET, WIDTH, 0, 0); // +2 to account for the bottom and top of the window which do not contain text
+	usr_text_win = create_newwin(HEIGHT_WIN_USR_TEXT, WIDTH, HEIGHT_WIN_CHAT + 2 + HEIGHT_OFFSET, 0);
 
-	wmove(usr_text_win, 1, 1);
-	wprintw(usr_text_win, name_buffer);
-	wrefresh(usr_text_win);
+	// Dont wanna show this one
+	chat_win_fake = newwin(HEIGHT_WIN_CHAT + HEIGHT_OFFSET, WIDTH-2, 1, 1);			
+	usr_text_win_fake = newwin(HEIGHT_WIN_USR_TEXT-2, WIDTH-2, HEIGHT_WIN_CHAT + 3 + HEIGHT_OFFSET, 1);
+
+	wmove(usr_text_win_fake, 0, 0);
+	wprintw(usr_text_win_fake, name_buffer);
+	wrefresh(usr_text_win_fake);
 
 	// Set up threads
     pthread_t thread;
@@ -80,7 +91,7 @@ program_name_1(char *host, char * username)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     // Spawn the listen/receive deamons
-    //pthread_create(&thread, &attr, draw_thread, NULL);
+    pthread_create(&thread, &attr, draw_thread, NULL);
 
 	while((ch = getch()) != KEY_F(1))
 	{	
@@ -94,11 +105,10 @@ program_name_1(char *host, char * username)
 					usr_txt[num_chars-1] = '\0';
 
 					//return cursor to beggining usr text window
-					werase(usr_text_win);
-					box(usr_text_win, 0 , 0);
-					wmove(usr_text_win, 1, 1);
-					wprintw(usr_text_win, name_buffer);
-					wrefresh(usr_text_win);
+					werase(usr_text_win_fake);
+					wmove(usr_text_win_fake, 0, 0);
+					wprintw(usr_text_win_fake, name_buffer);
+					wrefresh(usr_text_win_fake);
 
 					// prepare msg to be sent
 					char * msg = (char*) malloc((strlen(name_buffer) + strlen(usr_txt)) * sizeof(char));
@@ -114,23 +124,6 @@ program_name_1(char *host, char * username)
 
 					//reset num chars
 					num_chars = 0;
-					
-					//Print text in chat window
-					
-					message *result_2;
-					char *getchar_1_arg;
-
-					result_2 = getchar_1((void*)&getchar_1_arg, clnt);
-
-					if (result_2 == (message *) NULL) {
-						//clnt_perror (clnt, "call failed or message empty");
-					}else{
-						werase(chat_win);
-						box(chat_win, 0 , 0);
-						wmove(chat_win, 1, 1);
-						waddstr(chat_win, result_2->contents);
-						wrefresh(chat_win);
-					}
 				}
 
 				break;
@@ -139,16 +132,20 @@ program_name_1(char *host, char * username)
 					num_chars++;
 					usr_txt = realloc(usr_txt, num_chars * sizeof(char));
 					usr_txt[num_chars-1] = (char) ch;
-					wechochar(usr_text_win, ch);
+					wechochar(usr_text_win_fake, ch);
 				}
 				break;
 		}
 	}
 
-	pthread_join(thread, NULL);
+	//pthread_join(thread, NULL);
 
 	destroy_win(usr_text_win);
 	destroy_win(chat_win);
+
+	delwin(usr_text_win_fake);
+	delwin(chat_win_fake);
+
 	endwin();
 	//return 0;
 	
@@ -221,26 +218,43 @@ WINDOW *create_newwin(int height, int width, int starty, int startx)
 
 	return local_win;
 }
-/*
+
 void *draw_thread(void * t)
 {
 	message *result_2;
 	char *getchar_1_arg;
 
+	char height = 0;
+
 	while(1)
 	{
+		//Print text in chat window
 		result_2 = getchar_1((void*)&getchar_1_arg, clnt);
-		if (result_2 == (message *) NULL) {
-			//clnt_perror (clnt, "call failed or message empty");
-		}else{
-			printf("%s", result_2->contents);
-			werase(chat_win);
-			box(chat_win, 0 , 0);
-			wmove(chat_win, 1, 1);
-			wprintw(chat_win, result_2->contents);
-			wrefresh(chat_win);
+
+		if (result_2 != (message *) NULL) {
+			/*
+			height = strlen(result_2->contents) / (HEIGHT_WIN_CHAT + HEIGHT_OFFSET);
+
+			if(height - HEIGHT_WIN_CHAT - HEIGHT_OFFSET > 0){
+
+				int charcount;
+				int k = 0;
+				while(result_2->contents[k] != '\0'){
+					if(result_2->contents[k] == '\n')
+						charcount ++;
+					if (charcount >= height)
+						break;
+				}
+
+				result_2->contents+= k;
+			}
+			*/
+			werase(chat_win_fake);
+			wmove(chat_win_fake, 0, 0);
+			waddstr(chat_win_fake, result_2->contents);
+			//waddch(chat_win_fake, height);
+			wrefresh(chat_win_fake);
 		}
 		sleep(1);
 	}
 }
-*/

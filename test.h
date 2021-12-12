@@ -9,7 +9,7 @@
 #include <rpc/rpc.h>
 
 //defines for 
-#define WIDTH 100
+#define WIDTH 136
 #define HEIGHT_WIN_USR_TEXT 5
 #define HEIGHT_WIN_CHAT 10		// constant needs to be the same in the server
 #define USERNAME_MAX_LENGTH 23	// 3 extra chars for \0, > and space
