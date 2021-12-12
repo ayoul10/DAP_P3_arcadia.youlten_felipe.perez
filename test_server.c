@@ -34,10 +34,10 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
 {
 	static message result;
 	char count =0;
-	char line_buffer[MESSAGE_MAX_LENGTH];
-	char * file_buffer[10];
+	char line_buffer[MESSAGE_MAX_LENGTH + 1];
+	char * file_buffer[HEIGHT_WIN_CHAT];
 
-	memset(line_buffer, MESSAGE_MAX_LENGTH, 0);
+	memset(line_buffer, MESSAGE_MAX_LENGTH + 1, 0);
 
 	// Open the file and read the chat log
 	FILE * file = fopen(FILENAME, "r");
@@ -46,12 +46,14 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
     long int pos = ftell(file);
 
     /* Search for '\n' */
-    while (pos) {
-        fseek(file, --pos, SEEK_SET); /* seek from begin */
+	// If the file is longer than the rows on the screen, 
+	// only get last n (HEIGHT_WIN_CHAT) rows
+    while (pos > 0) {
 		if (fgetc(file) == '\n') {
-			if (count++ == 10) break;
+			if (count++ == HEIGHT_WIN_CHAT) break;
 		}
-    }
+		fseek(file, --pos, SEEK_SET);
+	}
 
 	/* Write line by line, is faster than fputc for each char */
 	int i=0;
@@ -64,17 +66,26 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
 		i++;
 	}
 
-	// TODO?? If the file is longer than the rows on the screen, 
-	// only get last n rows and send those back
-
 	// The client will print everything the server sends back
 
 	fclose(file);
 
+	// For debugging
 	write(STDOUT_FILENO, file_buffer[0], strlen(file_buffer[0]));
-	write(STDOUT_FILENO, "\n", 1);
 
-	result.contents = file_buffer[0];
+	// Concat all the message into a single variable for sending
+	char * message_to_send = calloc(0,0);
+	int length = 0;
+
+	for (i = 0; i < count -1; i++)
+	{
+		length += strlen(file_buffer[i]);
+		length++;
+		message_to_send = realloc(message_to_send, length * sizeof(char));
+		strcat(message_to_send, file_buffer[i]);
+	}
+
+	result.contents = message_to_send;
 
 	return &result;
 }

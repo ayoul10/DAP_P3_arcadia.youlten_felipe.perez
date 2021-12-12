@@ -11,12 +11,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define WIDTH 100
-#define HEIGHT_WIN_USR_TEXT 5
-#define HEIGHT_WIN_CHAT 30		// constant needs to be the same in the server
-#define USERNAME_MAX_LENGTH 23	// 3 extra chars for \0, > and space
-#define MESSAGE_MAX_LENGTH 269 	// Limiting user input to 269 per message (nice) twitter style
-
 void destroy_win(WINDOW *local_win);
 WINDOW *create_newwin(int height, int width, int starty, int startx);
 //void *draw_thread(void * chat_win);
@@ -65,15 +59,15 @@ program_name_1(char *host, char * username)
 		name_buffer[strlen(username) + 2] = '\0';
 	}
 	
-	initscr();			/* Start curses mode 		*/
-	cbreak();			/* Line buffering disabled, Pass on
-					 	* every thing to me 		*/
-	keypad(stdscr, TRUE);		/* I need that nifty F1 	*/
-	noecho();
+	initscr();				/* Start curses mode 		*/
+	cbreak();				/* Line buffering disabled, Pass on
+					 		* every thing to me 		*/
+	keypad(stdscr, TRUE);	/* I need that nifty F1 	*/
+	noecho();				// We will echo the letters ourselves
 	refresh();
 
-	chat_win = create_newwin(HEIGHT_WIN_CHAT, WIDTH, 0, 0);
-	usr_text_win = create_newwin(HEIGHT_WIN_USR_TEXT, WIDTH, HEIGHT_WIN_CHAT, 0);
+	chat_win = create_newwin(HEIGHT_WIN_CHAT + 2, WIDTH, 0, 0); // +2 to account for the bottom and top of the window which do not contain text
+	usr_text_win = create_newwin(HEIGHT_WIN_USR_TEXT, WIDTH, HEIGHT_WIN_CHAT + 2, 0);
 
 	wmove(usr_text_win, 1, 1);
 	wprintw(usr_text_win, name_buffer);
@@ -92,55 +86,51 @@ program_name_1(char *host, char * username)
 	{	
 		switch(ch)
 		{	case '\n':
-				//Finish saving usr input into string
-				num_chars++;
-				usr_txt = realloc(usr_txt, num_chars * sizeof(char));
-				usr_txt[num_chars-1] = '\0';
 
-				//return cursor to beggining usr text window
-				werase(usr_text_win);
-				box(usr_text_win, 0 , 0);
-				wmove(usr_text_win, 1, 1);
-				wprintw(usr_text_win, name_buffer);
-				wrefresh(usr_text_win);
+				if(num_chars){
+					//Finish saving usr input into string
+					num_chars++;
+					usr_txt = realloc(usr_txt, num_chars * sizeof(char));
+					usr_txt[num_chars-1] = '\0';
 
-				// prepare msg to be sent
-				char * msg = (char*) malloc((strlen(name_buffer) + strlen(usr_txt)) * sizeof(char));
-				strcpy(msg, name_buffer);
-				strcat(msg, usr_txt);
+					//return cursor to beggining usr text window
+					werase(usr_text_win);
+					box(usr_text_win, 0 , 0);
+					wmove(usr_text_win, 1, 1);
+					wprintw(usr_text_win, name_buffer);
+					wrefresh(usr_text_win);
 
-				// Send text to server
-				mywrite_1_arg.contents = msg;
-				result_1 = mywrite_1(&mywrite_1_arg, clnt);
-				if (result_1 == (void *) NULL) {
-					clnt_perror (clnt, "call failed");
-				}
+					// prepare msg to be sent
+					char * msg = (char*) malloc((strlen(name_buffer) + strlen(usr_txt)) * sizeof(char));
+					strcpy(msg, name_buffer);
+					strcat(msg, usr_txt);
 
-				//reset num chars
-				num_chars = 0;
-				
-				//Print text in chat window
-				/*
-				werase(chat_win);
-				box(chat_win, 0 , 0);
-				wmove(chat_win, 1, 1);
-				wprintw(chat_win, usr_txt);
-				wrefresh(chat_win);
-				*/
+					// Send text to server
+					mywrite_1_arg.contents = msg;
+					result_1 = mywrite_1(&mywrite_1_arg, clnt);
+					if (result_1 == (void *) NULL) {
+						clnt_perror (clnt, "call failed");
+					}
 
-				message *result_2;
-				char *getchar_1_arg;
-
-				result_2 = getchar_1((void*)&getchar_1_arg, clnt);
-				if (result_2 == (message *) NULL) {
-					//clnt_perror (clnt, "call failed or message empty");
-				}else{
+					//reset num chars
+					num_chars = 0;
 					
-					werase(chat_win);
-					box(chat_win, 0 , 0);
-					wmove(chat_win, 1, 1);
-					waddstr(chat_win, result_2->contents);
-					wrefresh(chat_win);
+					//Print text in chat window
+					
+					message *result_2;
+					char *getchar_1_arg;
+
+					result_2 = getchar_1((void*)&getchar_1_arg, clnt);
+
+					if (result_2 == (message *) NULL) {
+						//clnt_perror (clnt, "call failed or message empty");
+					}else{
+						werase(chat_win);
+						box(chat_win, 0 , 0);
+						wmove(chat_win, 1, 1);
+						waddstr(chat_win, result_2->contents);
+						wrefresh(chat_win);
+					}
 				}
 
 				break;
