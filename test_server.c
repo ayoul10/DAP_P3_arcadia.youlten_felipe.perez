@@ -35,7 +35,7 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
 	static message result;
 	char count =0;
 	char line_buffer[MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH + 1];
-	char * file_buffer[HEIGHT_WIN_CHAT];
+	char file_buffer[HEIGHT_WIN_CHAT][MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH + 1];
 
 	memset(line_buffer, 0, MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH + 1);
 
@@ -58,12 +58,8 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
 
 		/* Write line by line, is faster than fputc for each char */
 		int c=0;
-		while (fgets(line_buffer, sizeof(line_buffer), file) != NULL) {
-			file_buffer[c] = (char *) malloc((MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH) * sizeof(char));
-			memset(file_buffer[c], 0, MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH);
-			
+		while (fgets(line_buffer, sizeof(line_buffer), file) != NULL) {			
 			strcpy(file_buffer[c], line_buffer);
-			
 			c++;
 		}
 
@@ -75,18 +71,18 @@ getchar_1_svc(void *argp, struct svc_req *rqstp)
 		//write(STDOUT_FILENO, file_buffer[0], strlen(file_buffer[0]));
 
 		// Concat all the message into a single variable for sending
-		char * message_to_send = calloc(0,0);
+		char message_to_send[HEIGHT_WIN_CHAT * (MESSAGE_MAX_LENGTH + USERNAME_MAX_LENGTH + 1)];
 		int length = 0;
 
 		for (int i = 0; i < c; i++)
 		{
 			length += strlen(file_buffer[i]);
 			length++;
-			message_to_send = realloc(message_to_send, length * sizeof(char));
+			//message_to_send = realloc(message_to_send, length * sizeof(char));
 			strcat(message_to_send, file_buffer[i]);
 		}
 
-		message_to_send = realloc(message_to_send, length * sizeof(char) + 1);
+		//message_to_send = realloc(message_to_send, length * sizeof(char) + 1);
 		message_to_send[length] = '\0';
 
 		result.contents = message_to_send;
